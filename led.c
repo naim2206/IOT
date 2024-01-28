@@ -8,7 +8,7 @@ int main(int argc, char * argv []){
     int on;
     unsigned char value;
     urand = fopen("/dev/urandom","r");
-    led = fdopen("/sys/class/leds/gpio-led/brightness"); 
+    led = fopen("/sys/class/leds/gpio-led/brightness","w"); 
     //led = fopen("results.txt","wa");
     int i = 0;
     while(1){
@@ -27,7 +27,6 @@ int main(int argc, char * argv []){
     }
 
    
-    
 
     return 0;
 

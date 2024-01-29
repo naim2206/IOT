@@ -7,11 +7,13 @@ int main(int argc, char * argv []){
     FILE * urand, *led;
     int on;
     unsigned char value;
-    urand = fopen("/dev/urandom","r");
-    led = fopen("/sys/class/leds/gpio-led/brightness","w"); 
-    //led = fopen("results.txt","wa");
+    
     int i = 0;
     while(1){
+
+        urand = fopen("/dev/urandom","r");
+        led = fopen("/sys/class/leds/gpio-led/brightness","w"); 
+        //led = fopen("results.txt","w");
         value = fgetc(urand);
         if((int)value > 128){
             printf("LED ON");
@@ -23,7 +25,10 @@ int main(int argc, char * argv []){
             on = 0;
             fprintf(led,"%d",on);
         }
-        usleep(1000000);
+        //usleep(100000);
+        sleep(1);
+        fclose(led);
+        fclose(urand);
     }
 
    

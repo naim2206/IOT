@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-#define PORT 1883
+#define PORT 48907
 
 
 typedef struct
@@ -23,36 +23,37 @@ typedef struct
     char sClientID[100];
 } sConnect;
 
-int main(int argc, char const* argv[])
+int main()
 {
+    printf("hola\n");
     struct sockaddr_in addr;
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
 
-    *sConnect connect = malloc(sizeof(struct connectComand));
+    sConnect *conect = malloc(sizeof(sConnect));
 
     memset(&addr, 0, sizeof(addr));
 
-    inet_pton(AF_INET, "192.168.1.17", &(client.sin_addr));
+    inet_pton(AF_INET, "192.168.1.17", &(addr.sin_addr));
     addr.sin_port = htons(PORT);
     addr.sin_family = AF_INET;
 
     int ret = connect(sock, (const struct sockaddr*)&addr, sizeof(addr));
     // send connect command
-    connect->bFrameType = 0x10;
-    connect->wMsgLen = 0x0006;
-    connect->wProtlNameLen = 0x0004;
-    connect->sProtName = "MQTT";
-    connect->bVersion = 0x04;
-    connect->bConnectFlags = 0x02;
-    connect->bKeepAlive = 0x000A;
-    connect->wClientIdLen = 0x0004;
-    connect->sClientID = "test";
+    conect->bFrameType = 0x10;
+    conect->wMsgLen = 0x11;
+    conect->wProtlNameLen = 0x0004;
+    strcpy(conect->sProtName, "MQTT");
+    conect->bVersion = 0x05;
+    conect->bConnectFlags = 0x02;
+    conect->bKeepAlive = 0x003C;
+    conect->wClientIdLen = 0x05;
+    strcpy(conect->sProtName, "test");
 
-    char buff[1024];
-    ret = send(sock, (void*)connect, sizeof(struct connectComand), 0);
-    ret = recv(sock, buff, SIZE, 0);
-    printf("%X", buff);
+    //char buff[1024];
+    ret = send(sock, conect, sizeof(sConnect), 0);
+    //ret = recv(sock, buff, 1024*sizeof(char), 0);
+    //printf("%X", buff);
 
     ret = close(sock);
 

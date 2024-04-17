@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -23,6 +24,55 @@ typedef struct
     char sClientID[100];
 } sConnect;
 
+
+void* keep_alive(void* arg)
+{
+    struct sockaddr_in addr;
+
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+
+    memset(&addr, 0, sizeof(addr));
+
+    inet_pton(AF_INET, "192.168.1.17", &(addr.sin_addr));
+    addr.sin_port = htons(PORT);
+    addr.sin_family = AF_INET;
+
+    int ret = connect(sock, (const struct sockaddr*)&addr, sizeof(addr));
+
+    while (1)
+    {
+        sleep(10);
+        char buff[1024];
+        ret = send(sock, "keep alive", strlen("keep alive"), 0);
+        ret = recv(sock, buff, 1024 * sizeof(char), 0);
+        printf("%X", buff);
+    }
+    ret = close(sock);
+}
+
+void* listener_publish_messages(void* arg)
+{
+    struct sockaddr_in addr;
+
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+
+    memset(&addr, 0, sizeof(addr));
+
+    inet_pton(AF_INET, "192.168.1.17", &(addr.sin_addr));
+    addr.sin_port = htons(PORT);
+    addr.sin_family = AF_INET;
+
+    int ret = connect(sock, (const struct sockaddr*)&addr, sizeof(addr));
+
+    while (1)
+    {
+        char buff[1024];
+        ret = recv(sock, buff, 1024 * sizeof(char), 0);
+        printf("%X", buff);
+    }
+    ret = close(sock);
+}
+
 int main()
 {
     printf("hola\n");
@@ -30,7 +80,7 @@ int main()
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
 
-    sConnect *conect = malloc(sizeof(sConnect));
+    sConnect* conect = malloc(sizeof(sConnect));
 
     memset(&addr, 0, sizeof(addr));
 
@@ -50,10 +100,44 @@ int main()
     conect->wClientIdLen = 0x05;
     strcpy(conect->sProtName, "test");
 
-    //char buff[1024];
+    char buff[1024];
     ret = send(sock, conect, sizeof(sConnect), 0);
-    //ret = recv(sock, buff, 1024*sizeof(char), 0);
-    //printf("%X", buff);
+    ret = recv(sock, buff, 1024 * sizeof(char), 0);
+    printf("%X", buff);
+
+    // create a thread to send keep alive message every 10 seconds
+    pthread_t thread_keep_alive;
+    pthread_create(&thread_keep_alive, NULL, keep_alive, NULL);
+
+    // create a thread to listen to the server for publish messages
+    pthread_t thread_listener;
+    pthread_create(&thread_listener, NULL, listener_publish_messages, NULL);
+
+
+    char buff[1024];
+    ret = send(sock, conect, sizeof(sConnect), 0);
+    ret = recv(sock, buff, 1024 * sizeof(char), 0);
+    printf("%X", buff);
+
+    char buff[1024];
+    ret = send(sock, "subscribe", strlen("subscribe"), 0);
+    ret = recv(sock, buff, 1024 * sizeof(char), 0);
+    printf("%X", buff);
+
+    char buff[1024];
+    ret = send(sock, "publish", strlen("publish"), 0);
+    ret = recv(sock, buff, 1024 * sizeof(char), 0);
+    printf("%X", buff);
+
+    char buff[1024];
+    ret = send(sock, "unsubscribe", strlen("unsubscribe"), 0);
+    ret = recv(sock, buff, 1024 * sizeof(char), 0);
+    printf("%X", buff);
+
+
+    pthread_join(thread_keep_alive, NULL);
+    pthread_join(thread_listener, NULL);
+
 
     ret = close(sock);
 
